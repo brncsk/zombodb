@@ -255,7 +255,7 @@ impl ElasticsearchSearchRequest {
             query: Value,
 
             #[serde(skip_serializing_if = "Option::is_none")]
-            highlight: Option<HashMap<&'static str, HashMap<String, Value>>>,
+            highlight: Option<Value>,
         }
 
         let limit = query.limit();
@@ -263,9 +263,10 @@ impl ElasticsearchSearchRequest {
         let min_score = query.min_score();
 
         let highlight = if query.has_highlights() {
-            let mut map = HashMap::new();
-            map.insert("fields", query.highlights().clone());
-            Some(map)
+            Some(json!({
+                "fields": query.highlights().clone(),
+                "require_field_match": false,
+            }))
         } else {
             None
         };
