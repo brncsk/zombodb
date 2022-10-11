@@ -126,6 +126,27 @@ mod dsl {
         zero_terms_query: Option<ZeroTermsQuery>,
     }
 
+    #[derive(Serialize)]
+    struct MatchBoolPrefix<'a> {
+        query: &'a str,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        operator: Option<Operator>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        analyzer: Option<&'a str>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        minimum_should_match: Option<i32>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        fuzziness: Option<i32>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        prefix_length: Option<i32>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        max_expansions: Option<i32>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        fuzzy_transpositions: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        fuzzy_rewrite: Option<&'a str>,
+    }
+
     #[pg_extern(immutable, parallel_safe, name = "match")]
     fn match_wrapper(
         field: &str,
@@ -268,6 +289,39 @@ mod dsl {
             {
                  "match_phrase_prefix" : {
                     field : match_phrase_prefix,
+                 }
+            }
+        })
+    }
+
+    #[pg_extern(immutable, parallel_safe)]
+    fn match_bool_prefix(
+        field: &str,
+        query: &str,
+        operator: Option<default!(Operator, NULL)>,
+        analyzer: Option<default!(&str, NULL)>,
+        minimum_should_match: Option<default!(i32, NULL)>,
+        fuzziness: Option<default!(i32, NULL)>,
+        prefix_length: Option<default!(i32, NULL)>,
+        max_expansions: Option<default!(i32, NULL)>,
+        fuzzy_transpositions: Option<default!(bool, NULL)>,
+        fuzzy_rewrite: Option<default!(&str, NULL)>,
+    ) -> ZDBQuery {
+        let match_bool_prefix = MatchBoolPrefix {
+            query,
+            operator,
+            analyzer,
+            minimum_should_match,
+            fuzziness,
+            prefix_length,
+            max_expansions,
+            fuzzy_transpositions,
+            fuzzy_rewrite,
+        };
+        ZDBQuery::new_with_query_dsl(json! {
+            {
+                 "match_bool_prefix" : {
+                    field : match_bool_prefix,
                  }
             }
         })
